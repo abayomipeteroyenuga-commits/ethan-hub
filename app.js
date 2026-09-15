@@ -34,8 +34,38 @@ async function openErpWithSso(button){
 function showDashboard(user){document.querySelector('#auth').hidden=true;document.querySelector('#dashboard').hidden=false;const name=user?.user_metadata?.full_name||user?.user_metadata?.first_name||user?.email?.split('@')[0]||'Ethan User';document.querySelector('.welcome h1').textContent=`Welcome, ${name}`;document.querySelector('.avatar').textContent=name.split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase();}
 document.addEventListener('click',e=>{const t=e.target;if(t.matches('.tab')){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.querySelector('#signin').hidden=t.dataset.tab!=='signin';document.querySelector('#create').hidden=t.dataset.tab!=='create'}if(t.dataset.url){ if(t.dataset.url===(cfg.erpUrl||'https://app.ethandigitalacademy.org')) openErpWithSso(t); else window.open(t.dataset.url,'_blank') }});
 document.querySelector('#signin').addEventListener('submit',async e=>{e.preventDefault();if(!sb)return msg('Authentication configuration is unavailable.');const inputs=e.currentTarget.querySelectorAll('input');msg('Signing in…');const {data,error}=await sb.auth.signInWithPassword({email:inputs[0].value.trim(),password:inputs[1].value});if(error)return msg(error.message);showDashboard(data.user)});
-document.querySelector('#create').addEventListener('submit',async e=>{e.preventDefault();if(!sb)return msg('Authentication configuration is unavailable.');const inputs=e.currentTarget.querySelectorAll('input');const select=e.currentTarget.querySelector('select');if(inputs[2].value!==inputs[3].value)return msg('Passwords do not match.');const fullName=inputs[0].value.trim();msg('Creating your Ethan ID…');const {data,error}=await sb.auth.signUp({email:inputs[1].value.trim(),password:inputs[2].value,options:{data:{full_name:fullName,first_name:fullName.split(/\s+/)[0]||'',last_name:fullName.split(/\s+/).slice(1).join(' '),role:'student',learner_type:(select.value||'Student').toLowerCase()}}});if(error)return msg(error.message);if(data.session)showDashboard(data.user);else msg('Ethan ID created. Check your email to confirm your account, then sign in.')});
+document.querySelector('#create').addEventListener('submit',async e=>{e.preventDefault();if(!sb)return msg('Authentication configuration is unavailable.');const inputs=e.currentTarget.querySelectorAll('input');const select=e.currentTarget.querySelector('select');if(inputs[2].value!==inputs[3].value)return msg('Passwords do not match.');const fullName=inputs[0].value.trim();msg('Creating your Ethan ID…');const {data,error}=await sb.auth.signUp({email:inputs[1].value.trim(),password:inputs[2].value,options:{emailRedirectTo:`${location.origin}/auth/callback`,data:{full_name:fullName,first_name:fullName.split(/\s+/)[0]||'',last_name:fullName.split(/\s+/).slice(1).join(' '),role:'student',learner_type:(select.value||'Student').toLowerCase()}}});if(error)return msg(error.message);if(data.session)showDashboard(data.user);else msg('Ethan ID created. Check your email to confirm your account, then sign in.')});
 document.querySelector('.link').onclick=async()=>{const email=document.querySelector('#signin input[type=email]').value.trim();if(!email)return msg('Enter your email address first.');const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin});msg(error?error.message:'Password reset instructions have been sent to your email.')};
 document.querySelector('#signout').onclick=async()=>{if(sb)await sb.auth.signOut();location.reload()};
 document.querySelector('#accountBtn').onclick=()=>{document.querySelector('#dashboard').scrollIntoView({behavior:'smooth'})};
-(async()=>{if(!sb)return;const {data}=await sb.auth.getSession();if(data.session)showDashboard(data.session.user);sb.auth.onAuthStateChange((_event,session)=>{if(session)showDashboard(session.user)})})();
+(async()=>{
+  if(!sb)return;
+  const isCallback=location.pathname==='/auth/callback';
+  if(isCallback){
+    msg('Confirming your Ethan ID and signing you in…');
+    const code=new URLSearchParams(location.search).get('code');
+    if(code){
+      const {error}=await sb.auth.exchangeCodeForSession(code);
+      if(error){msg(error.message);return;}
+    }
+    // Supabase JS also detects implicit-flow tokens in the URL hash automatically.
+    await new Promise(r=>setTimeout(r,150));
+    const {data,error}=await sb.auth.getSession();
+    if(error){msg(error.message);return;}
+    if(data.session){
+      history.replaceState({},'', '/');
+      showDashboard(data.session.user);
+    }else{
+      msg('Your email was confirmed. Please sign in to continue.');
+    }
+  }else{
+    const {data}=await sb.auth.getSession();
+    if(data.session)showDashboard(data.session.user);
+  }
+  sb.auth.onAuthStateChange((_event,session)=>{
+    if(session){
+      if(location.pathname==='/auth/callback')history.replaceState({},'', '/');
+      showDashboard(session.user);
+    }
+  });
+})();

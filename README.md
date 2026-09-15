@@ -19,3 +19,7 @@ Connect Ethan ID to production authentication (e.g. Supabase) and integrate Etha
 - Ethan Hub now uses the SAME Supabase Auth project as ERP/LMS, so an Ethan ID is an ERP/LMS-compatible account.
 - Deploy Hub at hub.ethandigitalacademy.org and keep ERP/LMS at app.ethandigitalacademy.org.
 - Important: browser sessions are origin-scoped. This version shares identity/accounts, but seamless cross-subdomain SSO without a second login requires a server-side one-time-code/OAuth handoff. Do not pass passwords or refresh tokens in URLs.
+
+
+## v1.4 Email confirmation callback
+New signups redirect confirmation links to `/auth/callback`. Vercel rewrites that route to the Hub, which establishes the Supabase session and opens the signed-in dashboard automatically. Add `https://hub.ethandigitalacademy.org/auth/callback` to Supabase Auth Redirect URLs.
