@@ -1,5 +1,5 @@
 const cfg=window.ETHAN_HUB_CONFIG||{};
-const sb=(cfg.supabaseUrl&&cfg.supabasePublishableKey&&window.supabase)?window.supabase.createClient(cfg.supabaseUrl,cfg.supabasePublishableKey):null;
+const sb=(cfg.supabaseUrl&&cfg.supabasePublishableKey&&window.supabase)?window.supabase.createClient(cfg.supabaseUrl,cfg.supabasePublishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
 const apps=[
  ['🏫','Ethan ERP & LMS','Academy portal, courses, learning, fees, progress and administration.',cfg.erpUrl||'https://app.ethandigitalacademy.org','Connected'],
  ['🎓','Ethan Learn','Dedicated online digital learning platform.','https://learn.ethandigitalacademy.org'],
@@ -33,39 +33,52 @@ async function openErpWithSso(button){
 
 function showDashboard(user){document.querySelector('#auth').hidden=true;document.querySelector('#dashboard').hidden=false;const name=user?.user_metadata?.full_name||user?.user_metadata?.first_name||user?.email?.split('@')[0]||'Ethan User';document.querySelector('.welcome h1').textContent=`Welcome, ${name}`;document.querySelector('.avatar').textContent=name.split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase();}
 document.addEventListener('click',e=>{const t=e.target;if(t.matches('.tab')){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.querySelector('#signin').hidden=t.dataset.tab!=='signin';document.querySelector('#create').hidden=t.dataset.tab!=='create'}if(t.dataset.url){ if(t.dataset.url===(cfg.erpUrl||'https://app.ethandigitalacademy.org')) openErpWithSso(t); else window.open(t.dataset.url,'_blank') }});
-document.querySelector('#signin').addEventListener('submit',async e=>{e.preventDefault();if(!sb)return msg('Authentication configuration is unavailable.');const inputs=e.currentTarget.querySelectorAll('input');msg('Signing in…');const {data,error}=await sb.auth.signInWithPassword({email:inputs[0].value.trim(),password:inputs[1].value});if(error)return msg(error.message);showDashboard(data.user)});
+document.querySelector('#signin').addEventListener('submit',async e=>{e.preventDefault();if(!sb)return msg('Authentication configuration is unavailable.');const form=e.currentTarget,inputs=form.querySelectorAll('input'),button=form.querySelector('.primary');button.disabled=true;button.textContent='Signing in…';msg('Signing in securely…');try{const result=await Promise.race([sb.auth.signInWithPassword({email:inputs[0].value.trim(),password:inputs[1].value}),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Sign-in is taking longer than expected. Check your connection and try again.')),12000))]);const {data,error}=result;if(error)return msg(error.message);if(!data?.session)return msg('Sign-in could not establish a session. Please try again.');showDashboard(data.user)}catch(err){msg(err.message||'Unable to sign in. Please try again.')}finally{button.disabled=false;button.textContent='Sign In'}});
 document.querySelector('#create').addEventListener('submit',async e=>{e.preventDefault();if(!sb)return msg('Authentication configuration is unavailable.');const inputs=e.currentTarget.querySelectorAll('input');const select=e.currentTarget.querySelector('select');if(inputs[2].value!==inputs[3].value)return msg('Passwords do not match.');const fullName=inputs[0].value.trim();msg('Creating your Ethan ID…');const {data,error}=await sb.auth.signUp({email:inputs[1].value.trim(),password:inputs[2].value,options:{emailRedirectTo:`${location.origin}/auth/callback`,data:{full_name:fullName,first_name:fullName.split(/\s+/)[0]||'',last_name:fullName.split(/\s+/).slice(1).join(' '),role:'student',learner_type:(select.value||'Student').toLowerCase()}}});if(error)return msg(error.message);if(data.session)showDashboard(data.user);else msg('Ethan ID created. Check your email to confirm your account, then sign in.')});
 document.querySelector('.link').onclick=async()=>{const email=document.querySelector('#signin input[type=email]').value.trim();if(!email)return msg('Enter your email address first.');const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin});msg(error?error.message:'Password reset instructions have been sent to your email.')};
 document.querySelector('#signout').onclick=async()=>{if(sb)await sb.auth.signOut();location.reload()};
 document.querySelector('#accountBtn').onclick=()=>{document.querySelector('#dashboard').scrollIntoView({behavior:'smooth'})};
 (async()=>{
   if(!sb)return;
-  const isCallback=location.pathname==='/auth/callback';
-  if(isCallback){
-    msg('Confirming your Ethan ID and signing you in…');
-    const code=new URLSearchParams(location.search).get('code');
-    if(code){
-      const {error}=await sb.auth.exchangeCodeForSession(code);
-      if(error){msg(error.message);return;}
-    }
-    // Supabase JS also detects implicit-flow tokens in the URL hash automatically.
-    await new Promise(r=>setTimeout(r,150));
-    const {data,error}=await sb.auth.getSession();
-    if(error){msg(error.message);return;}
-    if(data.session){
-      history.replaceState({},'', '/');
-      showDashboard(data.session.user);
-    }else{
-      msg('Your email was confirmed. Please sign in to continue.');
-    }
-  }else{
-    const {data}=await sb.auth.getSession();
-    if(data.session)showDashboard(data.session.user);
-  }
+
+  // Register first so callback-created sessions are never missed.
   sb.auth.onAuthStateChange((_event,session)=>{
     if(session){
       if(location.pathname==='/auth/callback')history.replaceState({},'', '/');
       showDashboard(session.user);
     }
   });
+
+  const isCallback=location.pathname==='/auth/callback';
+  if(isCallback){
+    msg('Email confirmed. Signing you in automatically…');
+    try{
+      const code=new URLSearchParams(location.search).get('code');
+      if(code){
+        const {error}=await sb.auth.exchangeCodeForSession(code);
+        if(error)throw error;
+      }
+
+      // Wait briefly for Supabase to finish processing implicit/hash callbacks.
+      let session=null;
+      for(let i=0;i<12&&!session;i++){
+        const {data,error}=await sb.auth.getSession();
+        if(error)throw error;
+        session=data.session;
+        if(!session)await new Promise(r=>setTimeout(r,250));
+      }
+
+      if(session){
+        history.replaceState({},'', '/');
+        showDashboard(session.user);
+      }else{
+        msg('Your email is confirmed. Your secure session was not returned, so please sign in once to continue.');
+      }
+    }catch(err){
+      msg(err.message||'Your email was confirmed, but automatic sign-in could not finish. Please sign in once.');
+    }
+  }else{
+    const {data,error}=await sb.auth.getSession();
+    if(!error&&data.session)showDashboard(data.session.user);
+  }
 })();
