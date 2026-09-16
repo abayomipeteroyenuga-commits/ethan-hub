@@ -3,11 +3,7 @@
   "rewrites": [
     {
       "source": "/auth/callback",
-      "destination": "/"
-    },
-    {
-      "source": "/auth/callback/",
-      "destination": "/"
+      "destination": "/index.html"
     }
   ],
   "headers": [

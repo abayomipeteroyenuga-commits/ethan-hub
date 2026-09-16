@@ -1,7 +1,5 @@
-# Ethan Hub v3.8 — Confirmation Callback 404 Fixed
-The 404 happened because Supabase sends confirmation to /auth/callback but Vercel had no page at that route.
-This package includes BOTH:
-1. vercel.json rewrite /auth/callback -> /
-2. a physical auth/callback/index.html fallback
-Deploy the contents at repository root.
-No new SQL is required for this 404 fix.
+Ethan Hub v3.9
+Clean callback: no physical redirect and no /?#.
+Vercel rewrites /auth/callback directly to index.html.
+The existing callback exchanges the Supabase code, syncs verification, creates the session, enters Hub, then cleans URL to https://hub.ethandigitalacademy.org/
+No new SQL if v3.6 SQL was already run.

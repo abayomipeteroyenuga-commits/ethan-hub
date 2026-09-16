@@ -98,7 +98,7 @@ async function completeEmailConfirmation(){
     if(error) throw error;
     if(data && data.session){
       try{ await sb.rpc('mark_my_ethan_email_verified'); }catch(e){ console.warn(e); }
-      history.replaceState({},'', '/');
+      history.replaceState({},'', location.origin + '/');
       await showDashboard(data.session.user);
       return true;
     }
@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  $('#confirmationContinue').addEventListener('click',()=>location.href='https://hub.ethandigitalacademy.org');
  document.addEventListener('click',e=>{const b=e.target.closest('[data-url]');if(b)openApp(b,b.dataset.url,b.dataset.target)});
  if(!sb){msg('Ethan ID service could not load. Check your internet connection or deploy the Hub to its HTTPS domain.');return}
- const callback=location.pathname==='/auth/callback' || new URL(location.href).searchParams.has('code');
+ const callback=location.pathname.replace(/\/$/,'')==='/auth/callback' || new URL(location.href).searchParams.has('code');
  if(callback){
   $('header').hidden=true;$('main').hidden=true;$('footer').hidden=true;$('#confirmationPage').hidden=false;
   $('#confirmationTitle').textContent='Verifying Ethan ID…';
