@@ -3,5 +3,6 @@ window.ETHAN_HUB_CONFIG={
   supabasePublishableKey:'sb_publishable_LghFHw2wsTICWz3FmjFBew_zjk62iA_',
   erpUrl:'https://app.ethandigitalacademy.org',
   officeUrl:'https://office.ethandigitalacademy.org',
+  aiUrl:'https://search.ethandigitalacademy.org',
   ssoFunctionUrl:'https://hsigpjyvuvqdmujklcvw.supabase.co/functions/v1/ethan-sso'
 };
