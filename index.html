@@ -89,6 +89,29 @@ async function openApp(button,url,target){
  }catch(e){msg(e.message)}finally{button.disabled=false;button.textContent=old}
 }
 
+
+async function completeEmailConfirmation(){
+  const url=new URL(window.location.href);
+  const code=url.searchParams.get('code');
+  if(code){
+    const {data,error}=await sb.auth.exchangeCodeForSession(code);
+    if(error) throw error;
+    if(data && data.session){
+      try{ await sb.rpc('mark_my_ethan_email_verified'); }catch(e){ console.warn(e); }
+      history.replaceState({},'', '/');
+      await showDashboard(data.session.user);
+      return true;
+    }
+  }
+  const {data:{session}}=await sb.auth.getSession();
+  if(session && session.user && session.user.email_confirmed_at){
+    try{ await sb.rpc('mark_my_ethan_email_verified'); }catch(e){ console.warn(e); }
+    await showDashboard(session.user);
+    return true;
+  }
+  return false;
+}
+
 document.addEventListener('DOMContentLoaded',()=>{
  renderApps();
  document.querySelectorAll('.tab').forEach(tab=>tab.addEventListener('click',()=>{
@@ -98,27 +121,22 @@ document.addEventListener('DOMContentLoaded',()=>{
  $('#create').addEventListener('submit',async e=>{
   e.preventDefault();
   if(!sb)return msg('Ethan ID service could not load. Please use the deployed Ethan Hub website and check your internet connection.');
-  // Store stable DOM references before awaiting Supabase. Event.currentTarget becomes null after the async boundary.
-  const form=e.currentTarget;
-  const inputs=form.querySelectorAll('input');
-  const roleSelect=form.querySelector('select');
-  const fullName=inputs[0]?.value.trim()||'',email=inputs[1]?.value.trim()||'',password=inputs[2]?.value||'',confirm=inputs[3]?.value||'';
-  const role=normalizeRole(roleSelect?.value);
-  if(!fullName||!email||!password||!confirm)return msg('Please complete all required fields.');
+  const f=new FormData(e.currentTarget);
+  const inputs=e.currentTarget.querySelectorAll('input');
+  const fullName=inputs[0].value.trim(),email=inputs[1].value.trim(),password=inputs[2].value,confirm=inputs[3].value;
+  const role=normalizeRole(e.currentTarget.querySelector('select').value);
   if(password!==confirm)return msg('Passwords do not match.');
   if(password.length<8)return msg('Password must contain at least 8 characters.');
-  const button=e.submitter||form.querySelector('button[type=submit]');
-  if(button){button.disabled=true;button.textContent='Creating Ethan ID…'}
-  msg('Creating your Ethan ID…');
+  const button=e.submitter;button.disabled=true;button.textContent='Creating Ethan ID…';msg('Creating your Ethan ID…');
   try{
-   const redirect='https://hub.ethandigitalacademy.org/';
+   const redirect='https://hub.ethandigitalacademy.org/auth/callback';
    const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:redirect,data:{full_name:fullName,learner_type:PUBLIC_ROLES.has(role)?role:'student'}}});
    if(error)throw error;
    if(data?.user?.identities?.length===0)return msg('An Ethan ID may already exist for this email. Try Sign In or Forgot password.');
-   form.reset();
+   e.currentTarget.reset();
    msg('Ethan ID created successfully. Check your email and click the verification link, then sign in.');
   }catch(err){console.error(err);msg(err.message||'Unable to create Ethan ID. Please try again.')}
-  finally{if(button){button.disabled=false;button.textContent='Create Ethan ID'}}
+  finally{button.disabled=false;button.textContent='Create Ethan ID'}
  });
  $('#signin').addEventListener('submit',async e=>{
   e.preventDefault();if(!sb)return msg('Ethan ID service could not load.');
@@ -136,12 +154,20 @@ document.addEventListener('DOMContentLoaded',()=>{
  $('#confirmationContinue').addEventListener('click',()=>location.href='https://hub.ethandigitalacademy.org');
  document.addEventListener('click',e=>{const b=e.target.closest('[data-url]');if(b)openApp(b,b.dataset.url,b.dataset.target)});
  if(!sb){msg('Ethan ID service could not load. Check your internet connection or deploy the Hub to its HTTPS domain.');return}
- const callback=location.pathname==='/auth/callback';
+ const callback=location.pathname==='/auth/callback' || new URL(location.href).searchParams.has('code');
  if(callback){
   $('header').hidden=true;$('main').hidden=true;$('footer').hidden=true;$('#confirmationPage').hidden=false;
+  $('#confirmationTitle').textContent='Verifying Ethan ID…';
+  $('#confirmationText').textContent='Please wait. We are verifying your email and signing you in automatically.';
+  completeEmailConfirmation().catch(e=>{
+    console.error(e);
+    $('#confirmationTitle').textContent='Verification needs attention';
+    $('#confirmationText').textContent=e.message||'Unable to complete verification.';
+    $('#confirmationContinue').hidden=false;
+  });
  }
  sb.auth.onAuthStateChange(async(event,session)=>{
-  if(callback&&session){
+  if(callback&&session && !new URL(location.href).searchParams.has('code')){
    try{await sb.rpc('mark_my_ethan_email_verified')}catch(e){console.warn(e)}
    $('#confirmationTitle').textContent='Email Verified Successfully';
    $('#confirmationText').textContent='Your Ethan ID email has been verified. You can now enter Ethan Hub.';
