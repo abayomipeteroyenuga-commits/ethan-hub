@@ -98,22 +98,27 @@ document.addEventListener('DOMContentLoaded',()=>{
  $('#create').addEventListener('submit',async e=>{
   e.preventDefault();
   if(!sb)return msg('Ethan ID service could not load. Please use the deployed Ethan Hub website and check your internet connection.');
-  const f=new FormData(e.currentTarget);
-  const inputs=e.currentTarget.querySelectorAll('input');
-  const fullName=inputs[0].value.trim(),email=inputs[1].value.trim(),password=inputs[2].value,confirm=inputs[3].value;
-  const role=normalizeRole(e.currentTarget.querySelector('select').value);
+  // Store stable DOM references before awaiting Supabase. Event.currentTarget becomes null after the async boundary.
+  const form=e.currentTarget;
+  const inputs=form.querySelectorAll('input');
+  const roleSelect=form.querySelector('select');
+  const fullName=inputs[0]?.value.trim()||'',email=inputs[1]?.value.trim()||'',password=inputs[2]?.value||'',confirm=inputs[3]?.value||'';
+  const role=normalizeRole(roleSelect?.value);
+  if(!fullName||!email||!password||!confirm)return msg('Please complete all required fields.');
   if(password!==confirm)return msg('Passwords do not match.');
   if(password.length<8)return msg('Password must contain at least 8 characters.');
-  const button=e.submitter;button.disabled=true;button.textContent='Creating Ethan ID…';msg('Creating your Ethan ID…');
+  const button=e.submitter||form.querySelector('button[type=submit]');
+  if(button){button.disabled=true;button.textContent='Creating Ethan ID…'}
+  msg('Creating your Ethan ID…');
   try{
    const redirect='https://hub.ethandigitalacademy.org/auth/callback';
    const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:redirect,data:{full_name:fullName,learner_type:PUBLIC_ROLES.has(role)?role:'student'}}});
    if(error)throw error;
    if(data?.user?.identities?.length===0)return msg('An Ethan ID may already exist for this email. Try Sign In or Forgot password.');
-   e.currentTarget.reset();
+   form.reset();
    msg('Ethan ID created successfully. Check your email and click the verification link, then sign in.');
   }catch(err){console.error(err);msg(err.message||'Unable to create Ethan ID. Please try again.')}
-  finally{button.disabled=false;button.textContent='Create Ethan ID'}
+  finally{if(button){button.disabled=false;button.textContent='Create Ethan ID'}}
  });
  $('#signin').addEventListener('submit',async e=>{
   e.preventDefault();if(!sb)return msg('Ethan ID service could not load.');
