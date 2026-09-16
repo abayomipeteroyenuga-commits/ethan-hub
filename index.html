@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:redirect,data:{full_name:fullName,learner_type:PUBLIC_ROLES.has(role)?role:'student'}}});
    if(error)throw error;
    if(data?.user?.identities?.length===0)return msg('An Ethan ID may already exist for this email. Try Sign In or Forgot password.');
-   e.currentTarget.reset();
+   if(e.currentTarget && typeof e.currentTarget.reset==='function'){ if(e.currentTarget && typeof e.currentTarget.reset==='function'){ e.currentTarget.reset(); }; }
    msg('Ethan ID created successfully. Check your email and click the verification link, then sign in.');
   }catch(err){console.error(err);msg(err.message||'Unable to create Ethan ID. Please try again.')}
   finally{button.disabled=false;button.textContent='Create Ethan ID'}
@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     console.error(e);
     $('#confirmationTitle').textContent='Verification needs attention';
     $('#confirmationText').textContent=e.message||'Unable to complete verification.';
-    $('#confirmationContinue').hidden=false;
+    if($('#confirmationContinue')) $('#confirmationContinue').hidden=false;
   });
  }
  sb.auth.onAuthStateChange(async(event,session)=>{
@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    try{await sb.rpc('mark_my_ethan_email_verified')}catch(e){console.warn(e)}
    $('#confirmationTitle').textContent='Email Verified Successfully';
    $('#confirmationText').textContent='Your Ethan ID email has been verified. You can now enter Ethan Hub.';
-   $('#confirmationContinue').hidden=false;return;
+   if($('#confirmationContinue')) $('#confirmationContinue').hidden=false;return;
   }
   if(!callback&&session)await showDashboard(session.user);
  });
