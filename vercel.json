@@ -1,5 +1,9 @@
 {
+  "cleanUrls": true,
   "rewrites": [
-    { "source": "/auth/callback", "destination": "/index.html" }
+    {"source": "/auth/callback", "destination": "/index.html"}
+  ],
+  "headers": [
+    {"source": "/(.*)", "headers": [{"key":"Cache-Control","value":"no-store, max-age=0"}]}
   ]
 }

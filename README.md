@@ -1,25 +1,14 @@
-# Ethan Hub v1.1
+# Ethan Hub v3.5 — Single File Auth Repair
 
-One Account. One Ecosystem. Powered by Ethan Digital Academy.
+Deploy the CONTENTS of this folder as the root of the Vercel project.
 
-This version applies the supplied official Ethan Digital Academy logo to the Ethan Hub header, Ethan ID authentication experience, and signed-in dashboard.
+Why this version:
+- CSS, Ethan logo, config and Ethan Hub JavaScript are embedded in index.html.
+- This prevents stale/missing app.js, config.js or styles.css deployments.
+- Create Ethan ID tab works independently of Supabase.
+- Signup uses the existing Ethan ID Supabase project.
+- /auth/callback rewrites to index.html.
+- Cache is disabled while the authentication repair is being tested.
 
-## Current state
-- Responsive Ethan Hub interface
-- Sign In / Create Ethan ID prototype
-- Ethan ecosystem app launcher
-- Official Ethan Digital Academy branding
-- Ready for GitHub / Vercel static deployment
-
-## Next phase
-Connect Ethan ID to production authentication (e.g. Supabase) and integrate Ethan Learn as the first SSO-enabled service.
-
-## v1.2 ERP/LMS connection
-- Ethan ERP & LMS is the first connected ecosystem service.
-- Ethan Hub now uses the SAME Supabase Auth project as ERP/LMS, so an Ethan ID is an ERP/LMS-compatible account.
-- Deploy Hub at hub.ethandigitalacademy.org and keep ERP/LMS at app.ethandigitalacademy.org.
-- Important: browser sessions are origin-scoped. This version shares identity/accounts, but seamless cross-subdomain SSO without a second login requires a server-side one-time-code/OAuth handoff. Do not pass passwords or refresh tokens in URLs.
-
-
-## v1.4 Email confirmation callback
-New signups redirect confirmation links to `/auth/callback`. Vercel rewrites that route to the Hub, which establishes the Supabase session and opens the signed-in dashboard automatically. Add `https://hub.ethandigitalacademy.org/auth/callback` to Supabase Auth Redirect URLs.
+Production flow:
+Create Ethan ID → verify email → sign in → Ethan Hub.
