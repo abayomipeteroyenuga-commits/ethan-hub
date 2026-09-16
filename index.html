@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(button){button.disabled=true;button.textContent='Creating Ethan ID…'}
   msg('Creating your Ethan ID…');
   try{
-   const redirect='https://hub.ethandigitalacademy.org/auth/callback';
+   const redirect='https://hub.ethandigitalacademy.org/';
    const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:redirect,data:{full_name:fullName,learner_type:PUBLIC_ROLES.has(role)?role:'student'}}});
    if(error)throw error;
    if(data?.user?.identities?.length===0)return msg('An Ethan ID may already exist for this email. Try Sign In or Forgot password.');
