@@ -4,5 +4,6 @@ window.ETHAN_HUB_CONFIG={
   erpUrl:'https://app.ethandigitalacademy.org',
   officeUrl:'https://office.ethandigitalacademy.org',
   aiUrl:'https://search.ethandigitalacademy.org',
+  neonBikeUrl:'https://neonbike.ethandigitalacademy.org',
   ssoFunctionUrl:'https://hsigpjyvuvqdmujklcvw.supabase.co/functions/v1/ethan-sso'
 };
