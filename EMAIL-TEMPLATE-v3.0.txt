@@ -1,0 +1,20 @@
+Supabase > Authentication > Email Templates > Confirm signup
+
+Subject:
+Confirm Your Ethan ID
+
+Body:
+Confirm your Ethan ID
+
+Welcome to Ethan Digital Academy.
+
+Please confirm your email address to complete your Ethan ID registration.
+
+Use Supabase's built-in confirmation-link/button variable in the template editor.
+
+After verification, Ethan Hub access remains pending until a Super Admin approves the account.
+
+ETHAN DIGITAL ACADEMY
+LEARN. BUILD. GROW. LEAD.
+
+IMPORTANT: Do not paste the Ethan Hub webpage into the email template.
