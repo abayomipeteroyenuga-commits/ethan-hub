@@ -132,23 +132,30 @@ function showAuth(text=''){
  $('#auth').hidden=false;$('#dashboard').hidden=true;$('#confirmationPage').hidden=true;
  $('header').hidden=false;$('main').hidden=false;$('footer').hidden=false;if(text)msg(text);
 }
-async function getProfile(user){
- let {data,error}=await sb.from('ethan_profiles').select('user_id,full_name,email,role,email_verified,plan').eq('user_id',user.id).maybeSingle();
- if(error && /plan/i.test(error.message||''))({data,error}=await sb.from('ethan_profiles').select('user_id,full_name,email,role,email_verified').eq('user_id',user.id).maybeSingle());
- if(error)throw error; return data;
+async function getPlan(user){
+ try{
+  let {data,error}=await sb.from('ethan_profiles').select('plan').eq('user_id',user.id).maybeSingle();
+  if(error){
+   ({data,error}=await sb.from('ethan_profiles').select('plan').eq('id',user.id).maybeSingle());
+  }
+  return (!error && data?.plan) ? data.plan : 'free';
+ }catch(_){ return 'free'; }
 }
 async function showDashboard(user){
  try{
-  const p=await getProfile(user);
-  if(!p)return showAuth('Your Ethan ID profile is not ready. Please sign out and sign in again.');
-  if(!p.email_verified)return showAuth('Please verify your email address before entering Ethan Hub.');
-  $('#auth').hidden=true;$('#dashboard').hidden=false;
-  const name=p.full_name||user.user_metadata?.full_name||p.email?.split('@')[0]||'Ethan User';
+  // Supabase Auth is the source of truth for Ethan ID verification.
+  const verified=!!(user?.email_confirmed_at || user?.confirmed_at);
+  if(!verified)return showAuth('Please verify your email address before entering Ethan Hub.');
+  $('#auth').hidden=true;$('#dashboard').hidden=false;$('#confirmationPage').hidden=true;
+  $('header').hidden=false;$('main').hidden=false;$('footer').hidden=false;
+  const meta=user.user_metadata||{};
+  const name=meta.full_name||meta.name||user.email?.split('@')[0]||'Ethan User';
+  const role=meta.learner_type||meta.role||'student';
   $('.welcome h1').textContent=`Welcome, ${name}`;
-  $('.welcome p').textContent=`${roleLabel(p.role)} · Verified Ethan ID`;
+  $('.welcome p').textContent=`${roleLabel(role)} · Verified Ethan ID`;
   $('.avatar').textContent=name.split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase();
-  const plan=String(p.plan||'free').toUpperCase(); if($('#currentPlan'))$('#currentPlan').textContent=plan;
- }catch(e){console.error(e);showAuth('Unable to load your Ethan ID profile. '+(e.message||''))}
+  const plan=String(await getPlan(user)||'free').toUpperCase(); if($('#currentPlan'))$('#currentPlan').textContent=plan;
+ }catch(e){console.error(e);showAuth('Unable to open Ethan Hub. '+(e.message||''))}
 }
 async function openApp(button,url,target){
  if(!target){window.open(url,'_blank');return}
@@ -171,7 +178,6 @@ async function completeEmailConfirmation(){
     const {data,error}=await sb.auth.exchangeCodeForSession(code);
     if(error) throw error;
     if(data?.session){
-      try{ await sb.rpc('mark_my_ethan_email_verified'); }catch(e){ console.warn(e); }
       history.replaceState({},'', '/');
       $('header').hidden=false;$('main').hidden=false;$('footer').hidden=false;$('#confirmationPage').hidden=true;
       await showDashboard(data.session.user);
@@ -185,7 +191,6 @@ async function completeEmailConfirmation(){
     const {data:{session},error}=await sb.auth.getSession();
     if(error) throw error;
     if(session?.user){
-      try{ await sb.rpc('mark_my_ethan_email_verified'); }catch(e){ console.warn(e); }
       history.replaceState({},'', '/');
       $('header').hidden=false;$('main').hidden=false;$('footer').hidden=false;$('#confirmationPage').hidden=true;
       await showDashboard(session.user);
@@ -258,10 +263,9 @@ document.addEventListener('DOMContentLoaded',()=>{
  }
  sb.auth.onAuthStateChange(async(event,session)=>{
   if(callback&&session && !new URL(location.href).searchParams.has('code')){
-   try{await sb.rpc('mark_my_ethan_email_verified')}catch(e){console.warn(e)}
-   $('#confirmationTitle').textContent='Email Verified Successfully';
-   $('#confirmationText').textContent='Your Ethan ID email has been verified. You can now enter Ethan Hub.';
-   if($('#confirmationContinue')) $('#confirmationContinue').hidden=false;return;
+   await showDashboard(session.user);
+   history.replaceState({},'', '/');
+   return;
   }
   if(!callback&&session)await showDashboard(session.user);
  });
