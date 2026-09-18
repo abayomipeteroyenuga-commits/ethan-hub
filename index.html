@@ -84,7 +84,7 @@ const apps=[
  ['🎓','Ethan Learn','Dedicated online learning and structured course study.',cfg.learnUrl,null,'hub'],
  ['🤖','Ethan AI','AI search, chat and productivity tools.',cfg.aiUrl,'ai','sso'],
  ['📄','Ethan Office','Documents, spreadsheets and presentations.',cfg.officeUrl,'office','sso'],
- ['☁️','Ethan Cloud','Private files, folders and Ethan workspace storage.',cfg.cloudUrl,'cloud','id'],
+ ['☁️','Ethan Cloud','Private files, folders and Ethan workspace storage.',cfg.cloudUrl,'cloud','sso'],
  ['📍','Ethan GPS','Navigation and location tools.',cfg.gpsUrl,null,'hub'],
  ['🎮','Ethan Games','Games and interactive experiences.',cfg.gamesUrl,null,'hub'],
  ['🏍️','NEON BIKE RIDE','Ethan arcade riding experience.',cfg.neonBikeUrl,'neonbike','sso'],
@@ -130,7 +130,7 @@ async function openApp(button,url,target){
  if(!cfg.ssoFunctionUrl){location.href=url;return}
  const old=button.textContent;button.disabled=true;button.textContent='Connecting…';
  try{
-  const r=await fetch(cfg.ssoFunctionUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${session.access_token}`},body:JSON.stringify({action:'create',access_token:session.access_token,refresh_token:session.refresh_token,target})});
+  const r=await fetch(cfg.ssoFunctionUrl,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${session.access_token}`},body:JSON.stringify({action:'create',target})});
   const o=await r.json();if(!r.ok||!o.ticket)throw new Error(o.error||'Unable to connect.');
   const u=new URL(url);u.searchParams.set('ethan_sso',o.ticket);location.href=u;
  }catch(e){msg(e.message)}finally{button.disabled=false;button.textContent=old}
