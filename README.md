@@ -44,3 +44,8 @@ Deploy the `ethan-sso` Edge Function in this same project before relying on one-
 - Preserves the working Ethan ID/Supabase authentication and callback handling from v5.4.
 - Desktop dashboard uses a compact 3 x 3 ecosystem grid so all 9 app cards are presented together.
 - Reduces card height, spacing and typography on desktop without changing mobile/tablet responsiveness.
+
+## v6.0 app launcher fix
+- Only Ethan Cloud uses Ethan ID SSO while its integration is being tested.
+- All other Ethan apps open directly instead of getting stuck on Connecting.
+- Cloud SSO has a 6-second timeout and automatically opens Cloud normally if SSO is unavailable.
