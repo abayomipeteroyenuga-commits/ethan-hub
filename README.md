@@ -49,3 +49,7 @@ Deploy the `ethan-sso` Edge Function in this same project before relying on one-
 - Only Ethan Cloud uses Ethan ID SSO while its integration is being tested.
 - All other Ethan apps open directly instead of getting stuck on Connecting.
 - Cloud SSO has a 6-second timeout and automatically opens Cloud normally if SSO is unavailable.
+
+
+## v6.1 Ecosystem Hub Update
+The Hub dashboard now exposes 13 current Ethan services. Ethan Code uses https://learncoding.ethandigitalacademy.org. Ethan Games includes the Games Hub, City Drive and Super Kingdom. Ethan Pay and Ethan Document are included as Hub Access. Ethan Cloud remains the current Ethan ID SSO-enabled app. Ethan Certificate is intentionally excluded from general Hub access.
