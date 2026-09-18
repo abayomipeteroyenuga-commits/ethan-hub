@@ -1,3 +1,11 @@
+# ETHAN HUB v6.5 — ETHAN TUTOR AI HUB UPDATE
+
+This build is based directly on the uploaded ETHAN-HUB-v6.0-APP-LAUNCH-FIXED build.
+
+The JavaScript app registry itself now contains exactly 14 apps (not just a changed visual counter). Ethan Cloud retains the existing SSO route; other cards remain Hub Access.
+
+Build marker: 13 APPS v6.4
+
 # ETHAN HUB v5.0 — Ecosystem + Premium Framework
 
 Upgraded from the user's working v4.3 Supabase Verify / Auto Login build.
@@ -51,12 +59,5 @@ Deploy the `ethan-sso` Edge Function in this same project before relying on one-
 - Cloud SSO has a 6-second timeout and automatically opens Cloud normally if SSO is unavailable.
 
 
-## v6.1 Ecosystem Hub Update
-The Hub dashboard now exposes 13 current Ethan services. Ethan Code uses https://learncoding.ethandigitalacademy.org. Ethan Games includes the Games Hub, City Drive and Super Kingdom. Ethan Pay and Ethan Document are included as Hub Access. Ethan Cloud remains the current Ethan ID SSO-enabled app. Ethan Certificate is intentionally excluded from general Hub access.
-
-
-## v6.2 13-app visibility fix
-- Registry verified at exactly 13 apps.
-- Added visible v6.2 build marker.
-- Added no-store deployment headers to prevent an older 9-app dashboard being served from cache.
-- Preserves existing Ethan ID / Cloud SSO behavior.
+## v6.5
+Added Ethan Tutor AI (`https://tutor.ethandigitalacademy.org`) to the Hub registry as HUB ACCESS. Dashboard count updated to 14 apps. Existing Ethan Cloud SSO behavior is unchanged.
