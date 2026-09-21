@@ -1,0 +1,9 @@
+Ethan Creator is added to Hub's app list. Its URL has NOT been provided.
+
+Before deployment, open index.html and replace:
+  creatorUrl:'',
+with your actual deployed HTTPS Creator address, for example:
+  creatorUrl:'https://YOUR-REAL-CREATOR-DOMAIN',
+Do not use the example as a real URL. Until configured, the Creator tile says URL needed and its Open button is disabled.
+
+The existing Hub apps and authentication are unchanged. Upload the EXTRACTED files to the existing Hub repository, not the ZIP itself.
